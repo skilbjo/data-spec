@@ -20,6 +20,7 @@ begin;
   alter default privileges for user ro_robot_etl in schema public, dw grant select on tables to ro_robot_etl;
 
   grant connect on database production to ro_robot_etl;
+  grant usage on schema dw to ro_robot_etl;
   grant select on all tables in schema production to ro_robot_etl;
 
 commit;

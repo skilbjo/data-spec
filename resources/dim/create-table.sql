@@ -1,0 +1,50 @@
+begin;
+
+  create table if not exists dw.date_dim (
+    id                              integer primary key not null,
+    date                            date,
+    day_of_week                     smallint,
+    day_of_month                    smallint,
+    day_of_quarter                  smallint,
+    day_of_year                     smallint,
+    day_of_week_name                text,
+    day_of_week_abbreviation        text,
+    "weekday?"                      text,
+    "last_day_of_week?"             text,
+    "last_day_of_month?"            text,
+    "last_day_of_quarter?"          text,
+    "last_day_of_year?"             text,
+    "last_day_of_fiscal_month?"     text,
+    "last_day_of_fiscal_quarter?"   text,
+    "last_day_of_fiscal_year?"      text,
+    month_of_year                   smallint,
+    month_name                      text,
+    month_abbreviation              text,
+    first_date_of_month             date,
+    first_date_of_month_id          integer,
+    last_date_of_month              date,
+    last_date_of_month_id           integer,
+    quarter_of_year                 smallint,
+    first_date_of_quarter           date,
+    first_date_of_quarter_id        integer,
+    last_date_of_quarter            date,
+    last_date_of_quarter_id         integer,
+    year                            smallint,
+    first_date_of_year              date,
+    first_date_of_year_id           integer,
+    last_date_of_year               date,
+    last_date_of_year_id            integer,
+    yyyymm                          text,
+    yyyymmdd                        text,
+    ddmonyyyy                       text,
+    "official_public_holiday?"      text,
+    "fc_unofficial_holiday?"        text,
+    "bank_holiday?"                 text,
+    "fc_working_day?"               text,
+    "fc_funding_day?"               text,
+    holiday                         text
+  );
+
+  \copy dw.date_dim from './date_dim.data' with csv header;
+
+commit;

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -eoux pipefail
+
+psql $db_uri -c "\copy ( select * from dw.date_dim ) to './date_dim.data' with csv;"
+
+psql $aws_db_uri -f create-table.sql

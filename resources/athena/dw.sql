@@ -1,7 +1,7 @@
 create schema dw;
 
-drop table if exists dw.markets;
-create external table dw.markets (
+drop table if exists dw.markets_dim;
+create external table dw.markets_dim (
   dataset     string,
   ticker      string,
   description string
@@ -18,8 +18,8 @@ tblproperties (
   "skip.header.line.count"="1"
 );
 
-drop table if exists dw.portfolio;
-create external table dw.portfolio (
+drop table if exists dw.portfolio_dim;
+create external table dw.portfolio_dim (
   dataset           string,
   ticker            string,
   quantity          string,
@@ -38,8 +38,8 @@ tblproperties (
 );
 
 
-drop table if exists dw.currency;
-create external table dw.currency (
+drop table if exists dw.currency_fact;
+create external table dw.currency_fact (
   date            string,
   rate            string,
   high_est        string,
@@ -63,8 +63,8 @@ tblproperties (
   "skip.header.line.count"="1"
 );
 
-drop table if exists dw.economics;
-create external table dw.economics (
+drop table if exists dw.economics_fact;
+create external table dw.economics_fact (
   date            string,
   value           string,
   dataset         string,
@@ -85,8 +85,8 @@ tblproperties (
   "skip.header.line.count"="1"
 );
 
-drop table if exists dw.equities;
-create external table dw.equities (
+drop table if exists dw.equities_fact;
+create external table dw.equities_fact (
   open            string,
   date            string,
   adj_volume      string,
@@ -118,8 +118,8 @@ tblproperties (
   "skip.header.line.count"="1"
 );
 
-drop table if exists dw.interest_rates;
-create external table dw.interest_rates (
+drop table if exists dw.interest_rates_fact;
+create external table dw.interest_rates_fact (
   key             string,
   value           string,
   dataset         string,
@@ -141,8 +141,8 @@ tblproperties (
   "skip.header.line.count"="1"
 );
 
-drop table if exists dw.real_estate;
-create external table dw.real_estate (
+drop table if exists dw.real_estate_fact;
+create external table dw.real_estate_fact (
   date            string,
   value           string,
   area_category   string,
@@ -166,11 +166,11 @@ tblproperties (
   "skip.header.line.count"="1"
 );
 
-msck repair table dw.currency;
-msck repair table dw.economics;
-msck repair table dw.equities;
-msck repair table dw.interest_rates;
-msck repair table dw.real_estate;
+msck repair table dw.currency_fact;
+msck repair table dw.economics_fact;
+msck repair table dw.equities_fact;
+msck repair table dw.interest_rates_fact;
+msck repair table dw.real_estate_fact;
 
 with _markets as (
   select
@@ -178,7 +178,7 @@ with _markets as (
     ticker,
     description
   from
-    dw.markets
+    dw.markets_dim
 )
 select *
 from _markets
@@ -190,7 +190,7 @@ with _portfolio as (
     cast(quantity as decimal(10,4))      as quantity,
     cast(cost_per_share as decimal(6,2)) as cost_per_share
   from
-    dw.portfolio
+    dw.portfolio_dim
 )
 select *
 from _portfolio
@@ -205,7 +205,7 @@ with _currency as (
     cast(high_est as decimal(24,14)) as high_est,
     cast(low_est as decimal(24,14))  as low_est
   from
-    dw.currency
+    dw.currency_fact
 )
 select *
 from _currency
@@ -217,7 +217,7 @@ with _economics as (
     cast(date as date)               as date,
     cast(value as decimal(10,2))     as value
   from
-    dw.economics
+    dw.economics_fact
 )
 select *
 from _economics
@@ -239,7 +239,7 @@ with _equities as (
     cast(adj_volume as decimal(20,2))  as adj_volume,
     cast(ex_dividend as decimal(10,2)) as ex_dividend
   from
-    dw.equities
+    dw.equities_fact
 )
 select *
 from _equities
@@ -252,7 +252,7 @@ with _interest_rates as (
     key,
     cast(value as decimal(10,2)) as value
   from
-    dw.interest_rates
+    dw.interest_rates_fact
 )
 select *
 from _interest_rates
@@ -267,7 +267,7 @@ with _real_estate as (
     indicator_code  text,
     area            text
   from
-    dw.real_estate
+    dw.real_estate_fact
 )
 select *
 from _real_estate

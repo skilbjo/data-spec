@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -eou pipefail
+
+slack(){
+  local msg="${1}"
+
+  set +e
+  curl -X POST \
+    -H 'Content-type: application/json' \
+    --data '{"text":"'"${msg}"'"}' \
+    https://hooks.slack.com/services/${slack_api_key}
+  set -e
+}

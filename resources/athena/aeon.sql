@@ -1,4 +1,4 @@
-create schema aeon;
+create schema if not exists aeon;
 
 drop table if exists aeon.users;
 create external table aeon.users (

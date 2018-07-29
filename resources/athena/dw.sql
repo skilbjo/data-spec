@@ -1,4 +1,4 @@
-create schema dw;
+create schema if not exists dw;
 
 drop table if exists dw.markets_dim;
 create external table dw.markets_dim (
@@ -13,7 +13,7 @@ stored as inputformat
 outputformat
   'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
 location
-  's3://skilbjo-data/datalake/markets-etl/markets'
+  's3://skilbjo-data/datalake/markets-etl/markets_dim'
 tblproperties (
   "skip.header.line.count"="1"
 );
@@ -32,7 +32,7 @@ stored as inputformat
 outputformat
   'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
 location
-  's3://skilbjo-data/datalake/markets-etl/portfolio'
+  's3://skilbjo-data/datalake/markets-etl/portfolio_dim'
 tblproperties (
   "skip.header.line.count"="1"
 );
@@ -58,7 +58,7 @@ stored as inputformat
 outputformat
   'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
 location
-  's3://skilbjo-data/datalake/markets-etl/currency'
+  's3://skilbjo-data/datalake/markets-etl/currency_fact'
 tblproperties (
   "skip.header.line.count"="1"
 );
@@ -80,7 +80,7 @@ stored as inputformat
 outputformat
   'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
 location
-  's3://skilbjo-data/datalake/markets-etl/economics'
+  's3://skilbjo-data/datalake/markets-etl/economics_fact'
 tblproperties (
   "skip.header.line.count"="1"
 );
@@ -113,7 +113,7 @@ stored as inputformat
 outputformat
   'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
 location
-  's3://skilbjo-data/datalake/markets-etl/equities'
+  's3://skilbjo-data/datalake/markets-etl/equities_fact'
 tblproperties (
   "skip.header.line.count"="1"
 );
@@ -136,7 +136,7 @@ stored as inputformat
 outputformat
   'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
 location
-  's3://skilbjo-data/datalake/markets-etl/interest_rates'
+  's3://skilbjo-data/datalake/markets-etl/interest_rates_fact'
 tblproperties (
   "skip.header.line.count"="1"
 );
@@ -161,7 +161,7 @@ stored as inputformat
 outputformat
   'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
 location
-  's3://skilbjo-data/datalake/markets-etl/real_estate'
+  's3://skilbjo-data/datalake/markets-etl/real_estate_fact'
 tblproperties (
   "skip.header.line.count"="1"
 );

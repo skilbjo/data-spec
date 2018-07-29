@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -eou pipefail
+
+dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+resources_dir="${dir}/../../resources"
+statements=""
+
+setup () {
+  cd "$dir"
+
+  source "./athena"
+  source "./util"
+}
+
+deploy_ddl () {
+  for schema in $(ls "${resources_dir}/athena/"); do
+    IFS=';'
+    read -ra STMTS <<< $(cat "${resources_dir}/athena/${schema}" | tr '\n' ' ')
+    for stmt in "${STMTS[@]}"; do
+      echo "$stmt"
+      query "$stmt"
+      statements+="${stmt};\n"
+      echo "-------"
+    done
+  done
+}
+
+msg="$(whoami) updated Athena DDL for the following files\n from this repo: https://github.com/skilbjo/datawarehouse-spec \n$(ls "${resources_dir}/athena/") " && \
+
+setup && \
+  deploy_ddl && \
+  slack "$msg"

@@ -3,7 +3,7 @@ create schema if not exists aeon;
 drop table if exists aeon.users;
 create external table aeon.users (
   id          string,
-  _user       string,
+  user        string,
   password    string
 )
 row format serde
@@ -21,7 +21,7 @@ tblproperties (
 with _users as (
   select
     id,
-    _user,
+    user,
     password
   from
     aeon.users

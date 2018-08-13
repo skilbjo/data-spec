@@ -2,7 +2,7 @@
 set -eou pipefail
 
 get_status() {
-  local query_id=$1
+  local query_id="$1"
 
   aws athena \
     --region us-east-1 \
@@ -12,7 +12,7 @@ get_status() {
 }
 
 get_query () {
-  local query_id=$1
+  local query_id="$1"
 
   local results=$(aws athena \
     --region us-east-1 \
@@ -25,18 +25,18 @@ get_query () {
 
   echo "query_id is: $query_id"
 
-  eval $cmd && \
+  eval "$cmd" && \
     cat /tmp/athena/query
 }
 
 wait_til_finished() {
-  local query_id=$1
+  local query_id="$1"
   local status="in flux"
   local number_of_tries=5
 
   while [[ $status != done ]]; do
     set +e
-    get_status $query_id | grep "SUCCEEDED" >/dev/null
+    get_status "$query_id" | grep "SUCCEEDED" >/dev/null
     if [[ $? -eq 0 ]]; then
       status="done"
       get_query "$query_id"
@@ -61,6 +61,6 @@ query() {
       --query-string "$sql_trimmed"
     )
 
-    wait_til_finished $athena_query
+    wait_til_finished "$athena_query"
   fi
 }

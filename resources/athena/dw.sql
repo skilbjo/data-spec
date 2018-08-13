@@ -20,7 +20,7 @@ tblproperties (
 
 drop table if exists dw.portfolio_dim;
 create external table dw.portfolio_dim (
-  username          string,
+  user              string,
   dataset           string,
   ticker            string,
   quantity          string,

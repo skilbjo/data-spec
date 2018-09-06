@@ -27,14 +27,18 @@ create external table logs.s3 (
   user_agent                string,
   version_id                string
 )
+partitioned by (
+  s3uploaddate              date
+)
 row format serde
   'org.apache.hadoop.hive.serde2.RegexSerDe'
 with serdeproperties (
-  'serialization.format' = '1',
   'input.regex' = '([^ ]*) ([^ ]*) \\[(.*?)\\] ([^ ]*) ([^ ]*:([0-9]+):.*[^ ]) ([^ ]*) ([^ ]*) ([^ ]*) \\\"([^ ]*) ([^ ]*) (- |[^ ]*)\\\" (-|[0-9]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) (\"[^\"]*\") ([^ ]*)$'
 )
 location
-  's3://skilbjo-logs/'
-;
+  's3://skilbjo-data/logs/s3'
+tblproperties (
+  "skip.header.line.count"="0"
+);
 
 msck repair table logs.s3;

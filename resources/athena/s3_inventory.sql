@@ -23,7 +23,7 @@ stored as inputformat
 outputformat
   'org.apache.hadoop.hive.ql.io.IgnoreKeyTextOutputFormat'
 location
-  's3://skilbjo-data/datalake/s3_inventory/skilbjo_logs/skilbjo_logs/hive'
+  's3://skilbjo-data/datalake/s3_inventory/skilbjo-logs/skilbjo-logs/hive'
 tblproperties (
   'has_encrypted_data'='true'
 );

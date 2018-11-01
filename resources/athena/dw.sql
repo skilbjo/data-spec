@@ -43,8 +43,8 @@ drop table if exists dw.currency_fact;
 create external table dw.currency_fact (
   date            string,
   rate            string,
-  high_est        string,
-  low_est         string,
+  high            string,
+  low             string,
   dataset         string,
   ticker          string,
   currency        string

@@ -38,16 +38,15 @@ tblproperties (
   "skip.header.line.count"="1"
 );
 
-
 drop table if exists dw.currency_fact;
 create external table dw.currency_fact (
+  dataset         string,
+  ticker          string,
+  currency        string,
   date            string,
   rate            string,
   high            string,
-  low             string,
-  dataset         string,
-  ticker          string,
-  currency        string
+  low             string
 )
 partitioned by (
   s3uploaddate date

@@ -36,7 +36,7 @@ get_query () {
 wait_til_finished() {
   local query_id="$1"
   local status="in flux"
-  local number_of_tries=5
+  local number_of_tries=100
 
   while [[ $status != done ]]; do
     local state="$(get_state "$query_id")"

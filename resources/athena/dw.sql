@@ -2,9 +2,13 @@ create schema if not exists dw;
 
 drop table if exists dw.markets_dim;
 create external table dw.markets_dim (
-  dataset     string,
-  ticker      string,
-  description string
+  dataset          string,
+  ticker           string,
+  description      string,
+  asset_type       string,
+  location         string,
+  capitalization   string,
+  investment_style string
 )
 row format serde
   'org.apache.hadoop.hive.serde2.OpenCSVSerde'

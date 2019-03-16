@@ -1,4 +1,7 @@
-## dw-spec
+## data-spec
+
+[CircleCI Builds](https://circleci.com/gh/skilbjo/data-spec)
+[![CircleCI](https://circleci.com/gh/skilbjo/data-spec/tree/master.svg?style=svg)](https://circleci.com/gh/skilbjo/data-spec/tree/master)
 
 ### what
 Personal datawarehouse ERD. Applies to these projects:

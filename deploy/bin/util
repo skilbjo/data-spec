@@ -2,7 +2,7 @@
 set -eou pipefail
 
 slack(){
-  local msg="${1}"
+  local msg="$1"
 
   set +e
   curl -X POST \
@@ -10,4 +10,12 @@ slack(){
     --data '{"text":"'"${msg}"'"}' \
     https://hooks.slack.com/services/${slack_api_key}
   set -e
+}
+
+refresh_partitions(){
+  schema="$1"
+  table="$2"
+
+  query "msck repair table ${schema}.${table};"
+  echo "msck repair table ran for ${schema}.${table}"
 }

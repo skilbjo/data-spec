@@ -1,22 +1,77 @@
 version: 2
 jobs:
-  deploy-athena:
-    working_directory: ~/datawarehouse-spec
+  test:
+    working_directory: ~/data-spec
+    docker:
+    - image: circleci/clojure:lein-2.8.1
+    - image: circleci/postgres:9.5.12-alpine # for integration test
+    steps:
+      - checkout
+      - restore_cache:
+          key: << checksum "project.clj" >>
+      - run: lein deps
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: << checksum "project.clj" >>
+      - run: lein do test, cljfmt check
+
+  deploy-dw:
+    working_directory: ~/data-spec
     docker:
     - image: circleci/clojure:lein-2.8.1
     environment:
       - PATH: /usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/circleci/.local/bin
     steps:
       - checkout
-      - run: sudo apt update; sudo apt install -qq jq; sudo apt install -qq python-pip; pip install awscli --upgrade --user
-      - run: deploy/bin/deploy-athena
+      - run: echo 'fill me out later'
+
+  deploy-ddl:
+    working_directory: ~/data-spec
+    docker:
+    - image: circleci/clojure:lein-2.8.1
+    environment:
+      - PATH: /usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/circleci/.local/bin
+    steps:
+      - checkout
+      - run: sudo apt update; sudo apt install -qq bc jq python3-pip; pip3 install awscli --upgrade --user
+      - run: deploy/bin/deploy-athena deploy-ddl
+
+  repair-partitions:
+    working_directory: ~/data-spec
+    docker:
+    - image: circleci/clojure:lein-2.8.1
+    environment:
+      - PATH: /usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/circleci/.local/bin
+    steps:
+      - checkout
+      - run: sudo apt update; sudo apt install -qq bc jq python3-pip; pip3 install awscli --upgrade --user
+      - run: deploy/bin/deploy-athena repair-partitions
 
 workflows:
   version: 2
   test-and-deploy:
     jobs:
-      - deploy-athena:
+      - test
+
+      - deploy-dw:
           filters:
             branches:
               only:
                 - master
+          requires:
+            - test
+
+      - deploy-ddl:
+          filters:
+            branches:
+              only:
+                - master
+
+      - repair-partitions:
+          filters:
+            branches:
+              only:
+                - master
+          requires:
+            - deploy-ddl

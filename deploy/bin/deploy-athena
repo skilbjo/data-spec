@@ -1,21 +1,31 @@
 #!/usr/bin/env bash
 set -eou pipefail
 
-dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" && cd "$dir"
 resources_dir="${dir}/../../resources"
 statements=""
+set +u; task="$1"; set -u
 
-setup () {
-  cd "$dir"
+setup(){
+  src_dir="${dir}"
 
-  source "./athena"
-  source "./util"
+  source "${src_dir}/util"
+
+  if [[ $(whoami) == 'root' ]] || [[ $(whoami) == 'circleci' ]]; then
+    source "${src_dir}/athena"
+  elif [[ $(whoami) == 'skilbjo' ]]; then
+    source "/Users/skilbjo/dev/engineering/src/athena.user"
+  else
+    >&2 echo "user is: $(whoami), add to setup fn"
+  fi
 }
 
-deploy_ddl () {
-  for schema in $(ls "${resources_dir}/athena/"); do
+deploy_ddl(){
+  local STMTS=''
+
+  for schema in $(ls ${resources_dir}/athena/*.sql); do
     IFS=';'
-    read -ra STMTS <<< $(cat "${resources_dir}/athena/${schema}" | tr '\n' ' ')
+    read -ra STMTS <<< $(cat "$schema" | tr '\n' ' ')
     for stmt in "${STMTS[@]}"; do
       echo "$stmt"
       query "$stmt"
@@ -23,10 +33,86 @@ deploy_ddl () {
       echo "-------"
     done
   done
+
+  local msg="$(whoami) updated Athena DDL for the following files\n from this repo: https://github.com/skilbjo/data-spec \n$(ls ${resources_dir}/athena/*.sql) "
+
+  slack "$msg"
 }
 
-msg="$(whoami) updated Athena DDL for the following files\n from this repo: https://github.com/skilbjo/datawarehouse-spec \n$(ls "${resources_dir}/athena/") " && \
+repair_partitions_file(){
+  local STMTS=''
+  IFS=';'
+  read -ra STMTS <<< $(cat "${resources_dir}/athena/msck-repair-tables" | tr '\n' ' ')
+  for stmt in "${STMTS[@]}"; do
+    echo "$stmt"
+    query "$stmt"
+    statements+="${stmt};\n"
+    echo "-------"
+  done
 
-setup && \
-  deploy_ddl && \
+  local msg="$(whoami) Ran msck repair tables\n from this file: \n$(ls "${resources_dir}/athena/msck-repair-partitions") "
+
   slack "$msg"
+}
+
+repair_partitions_inline(){
+  refresh_partitions 'datalake' 'currency' &
+  refresh_partitions 'datalake' 'economics' &
+  refresh_partitions 'datalake' 'equities' &
+  refresh_partitions 'datalake' 'interest_rates' &
+  sleep 1
+  refresh_partitions 'datalake' 'real_estate' &
+  sleep 1
+  wait
+}
+
+repair_partitions(){
+  repair_partitions_inline
+}
+
+deploy_ddl_parallelized(){
+  local max_submitted='4'
+  local max_concurrency='5'
+  local sleep_time=2
+
+  for schema in $(ls ${resources_dir}/athena/*.sql | grep -v s3_logs.sql); do
+    IFS=';'
+    read -ra STMTS <<< $(cat "$schema" | tr '\n' ' ')
+    for i in "${!STMTS[@]}"; do
+      submitted="$(echo "$i % $max_submitted" | bc)"
+      concurrency="$(echo "$i % $max_concurrency" | bc)"
+      stmt="${STMTS[$i]}"
+      echo "$stmt"
+      query "$stmt" &
+      sleep "$sleep_time"
+
+      if [[ $i -le 2 ]]; then # drop database and create schema take a while
+        wait && sleep "$sleep_time"
+      fi
+
+      if [[ $submitted -eq $max_submitted ]]; then  # can only submit 4 requests per second
+        echo 'pausing on submitted' && sleep "$sleep_time"
+      fi
+
+      if [[ $concurrency -eq $max_concurrency ]]; then # can only have 5 queries running at one time
+        echo 'pausing on concurrency' && wait
+      fi
+    done
+    echo 'new file' && wait && sleep "$sleep_time"
+  done
+
+  local msg="$(whoami) updated Athena DDL for the following files\n from this repo: https://github.com/skilbjo/data-spec \n$(ls ${resources_dir}/athena/*.sql) "
+
+  slack "$msg"
+}
+
+setup
+
+case "$task" in
+  deploy-ddl )
+    deploy_ddl_parallelized ;;
+  repair-partitions )
+    repair_partitions ;;
+  * )
+    echo 'In deploy-athena but got no args.' && exit 1 ;;
+esac

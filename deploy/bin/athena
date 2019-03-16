@@ -27,8 +27,6 @@ get_query () {
 
   local cmd="aws s3 cp --region us-east-1 $results /tmp/athena/query >/dev/null"
 
-  echo "query_id is: $query_id"
-
   eval "$cmd" && \
     cat /tmp/athena/query
 }

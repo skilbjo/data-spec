@@ -17,14 +17,3 @@ location
 tblproperties (
   "skip.header.line.count"="1"
 );
-
-with _users as (
-  select
-    id,
-    user,
-    password
-  from
-    aeon.users
-)
-select *
-from _users

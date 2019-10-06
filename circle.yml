@@ -35,7 +35,7 @@ jobs:
     steps:
       - checkout
       - run: sudo apt update; sudo apt install -qq bc jq python3-pip; pip3 install awscli --upgrade --user
-      - run: deploy/bin/deploy-athena deploy-ddl
+      - run: deploy/bin/deploy-athena --task deploy-ddl
 
   repair-partitions:
     working_directory: ~/data-spec
@@ -46,7 +46,7 @@ jobs:
     steps:
       - checkout
       - run: sudo apt update; sudo apt install -qq bc jq python3-pip; pip3 install awscli --upgrade --user
-      - run: deploy/bin/deploy-athena repair-partitions
+      - run: deploy/bin/deploy-athena --task repair-partitions
 
 workflows:
   version: 2

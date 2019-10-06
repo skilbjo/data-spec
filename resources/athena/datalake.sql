@@ -47,28 +47,26 @@ create external table datalake.currency (
   dataset         string,
   ticker          string,
   currency        string,
-  rate            string,
-  high            string,
-  low             string
+  rate            double,
+  high            double,
+  low             double
 )
 partitioned by (
   date date
 )
 row format serde
-  'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+  'org.apache.hadoop.hive.ql.io.orc.OrcSerde'
 stored as inputformat
-  'org.apache.hadoop.mapred.TextInputFormat'
+  'org.apache.hadoop.hive.ql.io.orc.OrcInputFormat'
 outputformat
-  'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+  'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'
 location
   's3://skilbjo-data/datalake/markets-etl/currency'
-tblproperties (
-  "skip.header.line.count"="1"
-);
+;
 
 drop table if exists datalake.economics;
 create external table datalake.economics (
-  value           string,
+  value           double,
   dataset         string,
   ticker          string
 )
@@ -76,53 +74,49 @@ partitioned by (
   date date
 )
 row format serde
-  'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+  'org.apache.hadoop.hive.ql.io.orc.OrcSerde'
 stored as inputformat
-  'org.apache.hadoop.mapred.TextInputFormat'
+  'org.apache.hadoop.hive.ql.io.orc.OrcInputFormat'
 outputformat
-  'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+  'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'
 location
   's3://skilbjo-data/datalake/markets-etl/economics'
-tblproperties (
-  "skip.header.line.count"="1"
-);
+;
 
 drop table if exists datalake.equities;
 create external table datalake.equities (
-  open            string,
-  adj_volume      string,
-  adj_close       string,
+  open            double,
+  adj_volume      double,
+  adj_close       double,
   ticker          string,
-  adj_low         string,
-  ex_dividend     string,
-  close           string,
-  volume          string,
-  high            string,
-  adj_high        string,
-  split_ratio     string,
-  low             string,
-  adj_open        string,
+  adj_low         double,
+  ex_dividend     double,
+  close           double,
+  volume          double,
+  high            double,
+  adj_high        double,
+  split_ratio     double,
+  low             double,
+  adj_open        double,
   dataset         string
 )
 partitioned by (
   date date
 )
 row format serde
-  'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+  'org.apache.hadoop.hive.ql.io.orc.OrcSerde'
 stored as inputformat
-  'org.apache.hadoop.mapred.TextInputFormat'
+  'org.apache.hadoop.hive.ql.io.orc.OrcInputFormat'
 outputformat
-  'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+  'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'
 location
   's3://skilbjo-data/datalake/markets-etl/equities'
-tblproperties (
-  "skip.header.line.count"="1"
-);
+;
 
 drop table if exists datalake.interest_rates;
 create external table datalake.interest_rates (
   key             string,
-  value           string,
+  value           double,
   dataset         string,
   ticker          string
 )
@@ -130,16 +124,14 @@ partitioned by (
   date date
 )
 row format serde
-  'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+  'org.apache.hadoop.hive.ql.io.orc.OrcSerde'
 stored as inputformat
-  'org.apache.hadoop.mapred.TextInputFormat'
+  'org.apache.hadoop.hive.ql.io.orc.OrcInputFormat'
 outputformat
-  'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+  'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'
 location
   's3://skilbjo-data/datalake/markets-etl/interest_rates'
-tblproperties (
-  "skip.header.line.count"="1"
-);
+;
 
 drop table if exists datalake.real_estate;
 create external table datalake.real_estate (
@@ -154,13 +146,11 @@ partitioned by (
   date date
 )
 row format serde
-  'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+  'org.apache.hadoop.hive.ql.io.orc.OrcSerde'
 stored as inputformat
-  'org.apache.hadoop.mapred.TextInputFormat'
+  'org.apache.hadoop.hive.ql.io.orc.OrcInputFormat'
 outputformat
-  'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+  'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'
 location
   's3://skilbjo-data/datalake/markets-etl/real_estate'
-tblproperties (
-  "skip.header.line.count"="1"
-);
+;

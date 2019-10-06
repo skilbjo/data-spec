@@ -3,8 +3,19 @@ set -eou pipefail
 
 dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" && cd "$dir"
 resources_dir="${dir}/../../resources"
-statements=""
-set +u; task="$1"; set -u
+task=''
+staging_deploy=''
+
+usage(){ echo "Usage: deploy-athena: ${0} [--task <deploy-ddl|msck-repair-partitions|...>]" 1>&2; exit 1; }
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -t|--task) task="$2"; shift ;;
+    --testing) task='testing' ;;
+    --staging) staging_deploy='y' ;;
+  esac
+  shift
+done
+if [[ -z $task ]]; then usage; fi
 
 setup(){
   src_dir="${dir}"
@@ -18,41 +29,10 @@ setup(){
   else
     >&2 echo "user is: $(whoami), add to setup fn"
   fi
-}
 
-deploy_ddl(){
-  local STMTS=''
-
-  for schema in $(ls ${resources_dir}/athena/*.sql); do
-    IFS=';'
-    read -ra STMTS <<< $(cat "$schema" | tr '\n' ' ')
-    for stmt in "${STMTS[@]}"; do
-      echo "$stmt"
-      query "$stmt"
-      statements+="${stmt};\n"
-      echo "-------"
-    done
-  done
-
-  local msg="$(whoami) updated Athena DDL for the following files\n from this repo: https://github.com/skilbjo/data-spec \n$(ls ${resources_dir}/athena/*.sql) "
-
-  slack "$msg"
-}
-
-repair_partitions_file(){
-  local STMTS=''
-  IFS=';'
-  read -ra STMTS <<< $(cat "${resources_dir}/athena/msck-repair-tables" | tr '\n' ' ')
-  for stmt in "${STMTS[@]}"; do
-    echo "$stmt"
-    query "$stmt"
-    statements+="${stmt};\n"
-    echo "-------"
-  done
-
-  local msg="$(whoami) Ran msck repair tables\n from this file: \n$(ls "${resources_dir}/athena/msck-repair-partitions") "
-
-  slack "$msg"
+  if [[ ! -z $CIRCLE_BRANCH ]] && [[ $CIRCLE_BRANCH != 'master' ]]; then
+    staging_deploy='y'
+  fi
 }
 
 repair_partitions_inline(){
@@ -64,10 +44,6 @@ repair_partitions_inline(){
   refresh_partitions 'datalake' 'real_estate' &
   sleep 1
   wait
-}
-
-repair_partitions(){
-  repair_partitions_inline
 }
 
 deploy_ddl_parallelized(){
@@ -106,13 +82,72 @@ deploy_ddl_parallelized(){
   slack "$msg"
 }
 
+execute_ddl_concurrent(){
+  local file="$1"
+  set +u; local create_database="$2"; set -u
+  set +u; local staging="$3"; set -u
+
+  local max_submitted='4'
+  local max_concurrency='12'
+  local sleep_time=2
+
+  local STMTS=''
+  local submitted=''
+  local concurrency=''
+  local stmt=''
+  IFS=';'
+
+  read -ra STMTS <<< $(cat "$file" | tr '\n' ' ')
+  for i in "${!STMTS[@]}"; do
+    submitted="$(echo "$i % $max_submitted" | bc)"
+    concurrency="$(echo "$i % $max_concurrency" | bc)"
+    stmt="${STMTS[$i]}"
+
+    sleep "$sleep_time"
+
+    if [[ ! -z $staging ]]; then
+      staging_stmt="$(echo "$stmt" | sed 's/ datalake / staging /' | sed 's/ datalake/ staging/' | sed 's/ datalake\./ staging\./' | sed 's/datalake\/markets-etl/datalake\/staging/')"
+      echo "$staging_stmt"; query "$staging_stmt" &
+    else
+      echo "$stmt"; query "$stmt" &
+    fi
+
+    if [[ ! -z $create_database ]] && [[ $i -le 2 ]]; then # drop database and create schema take a while
+      wait && sleep "$sleep_time"
+    fi
+
+    if [[ $submitted -eq $max_submitted ]]; then  # can only submit 4 requests per second
+      echo 'pausing on submitted' && sleep "$sleep_time"
+    fi
+
+    if [[ $concurrency -eq $max_concurrency ]]; then # can only have 15 queries running at one time
+      echo 'pausing on concurrency' && wait
+    fi
+  done
+}
+
+deploy_ddl_concurrent(){
+  set +u; local staging="$1"; set -u
+
+  for schema in $(ls ${resources_dir}/athena/*.sql | grep -v s3_logs.sql); do # top level; drop/create schema, or small schemas
+    execute_ddl_concurrent "$schema" 'y' "$staging"; wait
+  done
+
+  for nested_file in "${resources_dir}/athena/"*/*.sql; do  # nested
+    execute_ddl_concurrent "$nested_file" '' "$staging"; wait
+  done
+
+  if [[ -n $staging ]] && [[ $staging_deploy != 'y' ]]; then
+    local msg="$(whoami) updated Athena DDL for the following files\n from this repo: https://github.com/skilbjo/data-spec \n$(ls ${resources_dir}/athena/*.sql) "
+    slack "$msg"
+  fi
+}
+
 setup
 
 case "$task" in
-  deploy-ddl )
-    deploy_ddl_parallelized ;;
-  repair-partitions )
-    repair_partitions ;;
-  * )
-    echo 'In deploy-athena but got no args.' && exit 1 ;;
+  deploy-ddl )        deploy_ddl_concurrent "$staging_deploy" ;;
+  staging )           deploy_ddl_concurrent 'y' ;;
+  repair-partitions ) repair_partitions_inline ;;
+  * ) echo 'In deploy-athena but got no args.' && exit 1 ;;
 esac

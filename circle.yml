@@ -7,22 +7,21 @@ workflows:
   version: 2
   test-and-deploy:
     jobs:
-      #- deploy-ddl
-      #- repair-partitions:
-          #filters:
-            #branches:
-              #only:
-                #- master
-          #requires:
-            #- deploy-ddl
-      - notify
-      #- notify:
-          #filters:
-            #branches:
-              #only:
-                #- master
-          #requires:
-            #- repair-partitions
+      - deploy-ddl
+      - repair-partitions:
+          filters:
+            branches:
+              only:
+                - master
+          requires:
+            - deploy-ddl
+      - notify:
+          filters:
+            branches:
+              only:
+                - master
+          requires:
+            - repair-partitions
 
 jobs:
   test:

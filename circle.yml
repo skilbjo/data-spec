@@ -1,4 +1,29 @@
-version: 2
+version: 2.1
+
+orbs:
+  slack: circleci/slack@3.4.0
+
+workflows:
+  version: 2
+  test-and-deploy:
+    jobs:
+      #- deploy-ddl
+      #- repair-partitions:
+          #filters:
+            #branches:
+              #only:
+                #- master
+          #requires:
+            #- deploy-ddl
+      - notify
+      #- notify:
+          #filters:
+            #branches:
+              #only:
+                #- master
+          #requires:
+            #- repair-partitions
+
 jobs:
   test:
     working_directory: ~/data-spec
@@ -48,15 +73,9 @@ jobs:
       - run: sudo apt update; sudo apt install -qq bc jq python3-pip; pip3 install awscli --upgrade --user
       - run: deploy/bin/deploy-athena --task repair-partitions
 
-workflows:
-  version: 2
-  test-and-deploy:
-    jobs:
-      - deploy-ddl
-      - repair-partitions:
-          filters:
-            branches:
-              only:
-                - master
-          requires:
-            - deploy-ddl
+  notify:
+    docker:
+      - image: circleci/clojure:lein-2.8.1
+    steps:
+      - slack/notify:
+          message: 'New version of datalake ddl deployed.'

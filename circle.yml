@@ -3,26 +3,6 @@ version: 2.1
 orbs:
   slack: circleci/slack@3.4.0
 
-workflows:
-  version: 2
-  test-and-deploy:
-    jobs:
-      - deploy-ddl
-      - repair-partitions:
-          filters:
-            branches:
-              only:
-                - master
-          requires:
-            - deploy-ddl
-      - notify:
-          filters:
-            branches:
-              only:
-                - master
-          requires:
-            - repair-partitions
-
 jobs:
   test:
     working_directory: ~/data-spec
@@ -78,3 +58,23 @@ jobs:
     steps:
       - slack/notify:
           message: 'New version of datalake ddl deployed.'
+
+workflows:
+  version: 2
+  test-and-deploy:
+    jobs:
+      - deploy-ddl
+      - repair-partitions:
+          filters:
+            branches:
+              only:
+                - master
+          requires:
+            - deploy-ddl
+      - notify:
+          filters:
+            branches:
+              only:
+                - master
+          requires:
+            - repair-partitions

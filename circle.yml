@@ -1,25 +1,41 @@
-version: 2
+version: 2.1
+
+executors:
+  bash:
+    docker:
+      - image: cimg/base:stable
+  clojure:
+    docker:
+    - image: circleci/clojure:lein-2.8.1
+  postgres:
+    docker:
+      - image: circleci/postgres:9.5.12-alpine # for integration test
+
+commands:
+  restore_and_save_cache:
+    - restore_cache:
+        key: << checksum "project.clj" >>
+    - run: lein deps
+    - save_cache:
+        paths:
+          - ~/.m2
+        key: << checksum "project.clj" >>
+
 jobs:
   test:
     working_directory: ~/data-spec
-    docker:
-    - image: circleci/clojure:lein-2.8.1
-    - image: circleci/postgres:9.5.12-alpine # for integration test
+    executor:
+      - name: clojure
+      - name: postgres
     steps:
       - checkout
-      - restore_cache:
-          key: << checksum "project.clj" >>
-      - run: lein deps
-      - save_cache:
-          paths:
-            - ~/.m2
-          key: << checksum "project.clj" >>
+      - restore_and_save_cache
       - run: lein do test, cljfmt check
 
   deploy-dw:
     working_directory: ~/data-spec
-    docker:
-    - image: circleci/clojure:lein-2.8.1
+    executor:
+      - name: clojure
     environment:
       - PATH: /usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/circleci/.local/bin
     steps:
@@ -28,8 +44,8 @@ jobs:
 
   deploy-ddl:
     working_directory: ~/data-spec
-    docker:
-    - image: circleci/clojure:lein-2.8.1
+    executor:
+      - image: bash
     environment:
       - PATH: /usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/circleci/.local/bin
     steps:
@@ -39,8 +55,8 @@ jobs:
 
   repair-partitions:
     working_directory: ~/data-spec
-    docker:
-    - image: circleci/clojure:lein-2.8.1
+    executor:
+      - image: bash
     environment:
       - PATH: /usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/circleci/.local/bin
     steps:

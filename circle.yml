@@ -33,7 +33,7 @@ commands:
           key: << checksum "project.clj" >>
   install_aws_cli:
     steps:
-      - run: apt update; apt install -qq bc python3-pip; pip3 install awscli --upgrade --user
+      - run: apt update; apt install -y -qq bc python3-pip; pip3 install awscli --upgrade --user
 
 jobs:
   test:

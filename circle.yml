@@ -5,50 +5,52 @@ orbs:
 
 executors:
   bash:
+    environment:
+      - PATH: /usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/circleci/.local/bin
     working_directory: ~/data-spec
     docker:
       - image: cimg/base:stable
   clojure:
+    environment:
+      - PATH: /usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/circleci/.local/bin
     working_directory: ~/data-spec
     docker:
       - image: circleci/clojure:lein-2.8.1
-  postgres:
+  clojure_and_postgres:
     docker:
+      - image: circleci/clojure:lein-2.8.1
       - image: circleci/postgres:9.5.12-alpine # integration test
 
 commands:
   restore_and_save_cache:
-    - restore_cache:
-        key: << checksum "project.clj" >>
-    - run: lein deps
-    - save_cache:
-        paths:
-          - ~/.m2
-        key: << checksum "project.clj" >>
+    steps:
+      - restore_cache:
+          key: << checksum "project.clj" >>
+      - run: lein deps
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: << checksum "project.clj" >>
   install_aws_cli:
-     - run: sudo apt update; sudo apt install -qq bc jq python3-pip; pip3 install awscli --upgrade --user
+    steps:
+      - run: sudo apt update; sudo apt install -qq bc jq python3-pip; pip3 install awscli --upgrade --user
 
 jobs:
   test:
-    executor:
-      - name: clojure
-      - name: postgres
+    executor: clojure_and_postgres
     steps:
       - checkout
       - restore_and_save_cache
       - run: lein do test, cljfmt check
 
   deploy-dw:
-    executor:
-      - name: clojure
+    executor: clojure
     steps:
       - checkout
       - run: echo 'fill me out later'
 
   deploy-ddl:
     executor: bash
-    environment:
-      - PATH: /usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/circleci/.local/bin
     steps:
       - checkout
       - install_aws_cli
@@ -56,8 +58,6 @@ jobs:
 
   repair-partitions:
     executor: bash
-    environment:
-      - PATH: /usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/circleci/.local/bin
     steps:
       - checkout
       - install_aws_cli
@@ -75,12 +75,16 @@ workflows:
     jobs:
       - deploy-ddl
       - repair-partitions:
-          requires: deploy-ddl
+          requires:
+            - deploy-ddl
           filters:
             branches:
-              only: master
+              only:
+                - master
       - notify:
-          requires: repair-partitions
+          requires:
+            - repair-partitions
           filters:
             branches:
-              only: master
+              only:
+                - master

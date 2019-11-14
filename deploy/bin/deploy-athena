@@ -46,42 +46,6 @@ repair_partitions_inline(){
   wait
 }
 
-deploy_ddl_parallelized(){
-  local max_submitted='4'
-  local max_concurrency='5'
-  local sleep_time=2
-
-  for schema in $(ls ${resources_dir}/athena/*.sql | grep -v s3_logs.sql); do
-    IFS=';'
-    read -ra STMTS <<< $(cat "$schema" | tr '\n' ' ')
-    for i in "${!STMTS[@]}"; do
-      submitted="$(echo "$i % $max_submitted" | bc)"
-      concurrency="$(echo "$i % $max_concurrency" | bc)"
-      stmt="${STMTS[$i]}"
-      echo "$stmt"
-      query "$stmt" &
-      sleep "$sleep_time"
-
-      if [[ $i -le 2 ]]; then # drop database and create schema take a while
-        wait && sleep "$sleep_time"
-      fi
-
-      if [[ $submitted -eq $max_submitted ]]; then  # can only submit 4 requests per second
-        echo 'pausing on submitted' && sleep "$sleep_time"
-      fi
-
-      if [[ $concurrency -eq $max_concurrency ]]; then # can only have 5 queries running at one time
-        echo 'pausing on concurrency' && wait
-      fi
-    done
-    echo 'new file' && wait && sleep "$sleep_time"
-  done
-
-  local msg="$(whoami) updated Athena DDL for the following files\n from this repo: https://github.com/skilbjo/data-spec \n$(ls ${resources_dir}/athena/*.sql) "
-
-  slack "$msg"
-}
-
 execute_ddl_concurrent(){
   local file="$1"
   set +u; local create_database="$2"; set -u
@@ -136,11 +100,6 @@ deploy_ddl_concurrent(){
   for nested_file in "${resources_dir}/athena/"*/*.sql; do  # nested
     execute_ddl_concurrent "$nested_file" '' "$staging"; wait
   done
-
-  if [[ -n $staging ]] && [[ $staging_deploy != 'y' ]]; then
-    local msg="$(whoami) updated Athena DDL for the following files\n from this repo: https://github.com/skilbjo/data-spec \n$(ls ${resources_dir}/athena/*.sql) "
-    slack "$msg"
-  fi
 }
 
 setup

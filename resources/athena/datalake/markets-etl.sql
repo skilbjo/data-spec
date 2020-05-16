@@ -145,3 +145,24 @@ outputformat
 location
   's3://skilbjo-data/datalake/markets-etl/real_estate'
 ;
+
+create external table datalake.commodities (
+  average     double,
+  close       double,
+  volume      double,
+  open        double,
+  dataset     string,
+  ticker      string
+)
+partitioned by (
+  date date
+)
+row format serde
+  'org.apache.hadoop.hive.ql.io.orc.OrcSerde'
+stored as inputformat
+  'org.apache.hadoop.hive.ql.io.orc.OrcInputFormat'
+outputformat
+  'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'
+location
+  's3://skilbjo-data/datalake/markets-etl/commodities'
+;
